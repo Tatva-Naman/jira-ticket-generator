@@ -1,36 +1,34 @@
 import React, { useRef, useState } from "react";
 import { Toaster, toast } from "react-hot-toast";
- 
+
 enum SubTaskType {
   FE = "FE",
   BE = "BE",
   Both = "Both",
 }
- 
+
 interface Story {
   id: number;
   text: string;
   type: SubTaskType;
 }
- 
+
 function App() {
   const [stories, setStories] = useState<Story[]>([]);
   const [previewSubtask, setPreviewSubtasks] = useState<string[]>([]);
   const [responseMessage, setResponseMessage] = useState("");
   const [addErrorMessage, setAddErrorMessage] = useState("");
   const [previewErrorMessage, setPreviewErrorMessage] = useState("");
-  const [errorMessage, setErrorMessage] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
- 
+
   const url = process.env.REACT_APP_RUST_URL || "";
- 
+
   const addStory = () => {
     const value = inputRef.current?.value || "";
- 
+
     setAddErrorMessage("");
     setPreviewErrorMessage("");
-    setErrorMessage("");
- 
+
     if (stories.filter((s) => s.text === value).length > 0) {
       setAddErrorMessage("User Story already exists!");
       return;
@@ -46,28 +44,25 @@ function App() {
     }
     inputRef.current!.value = "";
   };
- 
+
   const updateStoryType = (id: number, type: SubTaskType) => {
     setAddErrorMessage("");
     setPreviewErrorMessage("");
-    setErrorMessage("");
- 
+
     setStories(stories.map((s) => (s.id === id ? { ...s, type } : s)));
   };
- 
+
   const removeStory = (id: number) => {
     setAddErrorMessage("");
     setPreviewErrorMessage("");
-    setErrorMessage("");
- 
+
     setStories(stories.filter((s) => s.id !== id));
   };
- 
+
   const previewSubtasks = () => {
     setAddErrorMessage("");
     setPreviewErrorMessage("");
-    setErrorMessage("");
- 
+
     if (stories.length === 0) {
       setPreviewSubtasks([]);
       setPreviewErrorMessage(
@@ -76,7 +71,7 @@ function App() {
       return;
     }
     const list: string[] = [];
- 
+
     stories.forEach((s) => {
       if (s.type === SubTaskType.FE || s.type === SubTaskType.Both) {
         list.push(`(${s.text}) FE - Review Requirements`);
@@ -91,21 +86,20 @@ function App() {
     });
     setPreviewSubtasks(list);
   };
- 
+
   const generateSubtasks = async (event: any) => {
     const loadingToast = toast.loading("Creating subtasks...");
     event.preventDefault();
     setAddErrorMessage("");
-    setErrorMessage("");
     setResponseMessage("");
- 
+
     let payload = previewSubtask.map((subtask) => ({
       parent: {
         key: subtask.match(/\(([^)]+)\)/)![1],
       },
       summary: subtask,
     }));
- 
+
     try {
       const response = await fetch(url, {
         method: "POST",
@@ -114,31 +108,31 @@ function App() {
         },
         body: JSON.stringify(payload),
       });
- 
+
       if (!response.ok) {
         const errJson = await response.json();
- 
+
         let parsedMessages = [];
         try {
           parsedMessages = JSON.parse(errJson.message);
         } catch {
           parsedMessages = [errJson.message];
         }
- 
+
         const formatted = parsedMessages
           .map((msg: string) => `Error: ${msg}`)
           .join("\n");
- 
+
         throw new Error(formatted);
       }
- 
-      toast.success("SubTasks created successfully!",  { id: loadingToast });
- 
+
+      toast.success("SubTasks created successfully!", { id: loadingToast });
+
     } catch (error: any) {
-      toast.error(error.message,  { id: loadingToast });
+      toast.error(error.message, { id: loadingToast });
     }
   };
- 
+
   return (
     <div className="min-h-screen bg-[#0A1628] text-white p-10">
       <div className="max-w-4xl mx-auto bg-[#091422] p-6 rounded-xl shadow-lg space-y-6 ">
@@ -158,7 +152,7 @@ function App() {
           </button>
         </div>
         {addErrorMessage && <div style={{ color: "red" }}>{addErrorMessage}</div>}
- 
+
         <h2 className="text-xl font-semibold">Story List</h2>
         <div className="space-y-4">
           {stories.map((s) => (
@@ -176,7 +170,7 @@ function App() {
                   />
                   FE
                 </label>
- 
+
                 <label className="flex gap-1 item-center">
                   <input
                     type="radio"
@@ -185,7 +179,7 @@ function App() {
                   />
                   BE
                 </label>
- 
+
                 <label className="flex gap-1 item-center">
                   <input
                     type="radio"
@@ -194,7 +188,7 @@ function App() {
                   />
                   Both
                 </label>
- 
+
                 <button
                   onClick={() => removeStory(s.id)}
                   className="rounded-md"
@@ -215,7 +209,7 @@ function App() {
             </div>
           ))}
         </div>
- 
+
         <button
           onClick={previewSubtasks}
           className="w-full bg-[#0FB1D3] py-4 font-semibold rounded-md text-lg"
@@ -225,7 +219,7 @@ function App() {
         {previewErrorMessage && (
           <div style={{ color: "red" }}>{previewErrorMessage}</div>
         )}
- 
+
         {previewSubtask.length > 0 && (
           <div>
             <div className="flex justify-between item-center">
@@ -250,9 +244,7 @@ function App() {
             {responseMessage && (
               <div style={{ color: "green" }}>{responseMessage}</div>
             )}
-            {errorMessage && (
-              <div style={{ color: "red", whiteSpace: "pre-line" }}>{errorMessage}</div>
-            )}
+
           </div>
         )}
       </div>
@@ -260,5 +252,5 @@ function App() {
     </div>
   );
 }
- 
+
 export default App;
