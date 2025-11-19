@@ -18,8 +18,10 @@ function App() {
   const [responseMessage, setResponseMessage] = useState("");
   const [addErrorMessage, setAddErrorMessage] = useState("");
   const [previewErrorMessage, setPreviewErrorMessage] = useState("");
-  const [errorMessage, setErrorMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [popupMessage, setPopupMessage] = useState("");
+  const [popupType, setPopupType] = useState<"success" | "error" | "">("");
+
   const inputRef = useRef<HTMLInputElement>(null);
 
   const url = process.env.REACT_APP_RUST_URL || "";
@@ -31,7 +33,6 @@ function App() {
     setAddErrorMessage("");
     setPreviewErrorMessage("");
     setResponseMessage("");
-    setErrorMessage("");
 
     if (stories.filter((s) => s.text === value).length > 0) {
       setAddErrorMessage("User Story already exists!");
@@ -73,7 +74,6 @@ function App() {
   const previewSubtasks = () => {
     setAddErrorMessage("");
     setPreviewErrorMessage("");
-    setErrorMessage("");
     setResponseMessage("");
 
     if (stories.length === 0) {
@@ -87,7 +87,6 @@ function App() {
   const updateStoryType = (id: number, type: SubTaskType) => {
     setAddErrorMessage("");
     setPreviewErrorMessage("");
-    setErrorMessage("");
     setResponseMessage("");
 
     setStories(stories.map((s) => (s.id === id ? { ...s, type } : s)));
@@ -98,7 +97,6 @@ function App() {
   const removeStory = (id: number) => {
     setAddErrorMessage("");
     setPreviewErrorMessage("");
-    setErrorMessage("");
     setResponseMessage("");
 
     setStories((prev) => {
@@ -116,7 +114,6 @@ function App() {
   const generateSubtasks = async (event: any) => {
     event.preventDefault();
     setAddErrorMessage("");
-    setErrorMessage("");
     setResponseMessage("");
     setIsLoading(true);
 
@@ -152,12 +149,14 @@ function App() {
 
         throw new Error(formatted);
       }
-      setResponseMessage("SubTasks created successfully!");
+      setPopupMessage("SubTasks created successfully!");
+      setPopupType("success");
 
     } catch (error: any) {
-      setErrorMessage(error.message);
+      setPopupMessage(error.message);
+      setPopupType("error");
     } finally {
-      setIsLoading(false); // <-- stop loader
+      setIsLoading(false);
     }
   };
 
@@ -272,14 +271,38 @@ function App() {
             {responseMessage && (
               <div style={{ color: "green" }}>{responseMessage}</div>
             )}
-            {errorMessage && (<div style={{ color: "red" }}>{errorMessage}</div>)}
-
           </div>
         )}
       </div>
       {isLoading && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
           <div className="w-16 h-16 border-4 border-[#0FB1D3] border-t-transparent rounded-full animate-spin"></div>
+        </div>
+      )}
+      {popupType !== "" && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-[#0F223A] p-6 rounded-lg w-96 space-y-4 border border-gray-700">
+
+            <h2 className="text-xl font-semibold">
+              {popupType === "success" ? "Success" : "Error"}
+            </h2>
+
+            <pre className="whitespace-pre-wrap text-sm">
+              {popupMessage}
+            </pre>
+
+            <button
+              onClick={() => {
+                setStories([]);
+                setPreviewSubtasks([]);
+                setPopupType("");
+                setPopupMessage("");
+              }}
+              className={`w-full py-2 rounded-md font-semibold ${popupType === "success" ? "bg-green-600" : "bg-red-600"}`}
+            >
+              OK
+            </button>
+          </div>
         </div>
       )}
 
