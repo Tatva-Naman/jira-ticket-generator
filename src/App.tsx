@@ -19,6 +19,7 @@ function App() {
   const [addErrorMessage, setAddErrorMessage] = useState("");
   const [previewErrorMessage, setPreviewErrorMessage] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const url = process.env.REACT_APP_RUST_URL || "";
@@ -75,7 +76,7 @@ function App() {
     setErrorMessage("");
     setResponseMessage("");
 
-    if(stories.length === 0){
+    if (stories.length === 0) {
       setPreviewErrorMessage("No User Story to preview SubTasks!");
       return;
     }
@@ -117,6 +118,7 @@ function App() {
     setAddErrorMessage("");
     setErrorMessage("");
     setResponseMessage("");
+    setIsLoading(true);
 
     let payload = previewSubtask.map((subtask) => ({
       parent: {
@@ -154,6 +156,8 @@ function App() {
 
     } catch (error: any) {
       setErrorMessage(error.message);
+    } finally {
+      setIsLoading(false); // <-- stop loader
     }
   };
 
@@ -268,11 +272,17 @@ function App() {
             {responseMessage && (
               <div style={{ color: "green" }}>{responseMessage}</div>
             )}
-            {errorMessage &&( <div style={{ color: "red" }}>{errorMessage}</div>)}
+            {errorMessage && (<div style={{ color: "red" }}>{errorMessage}</div>)}
 
           </div>
         )}
       </div>
+      {isLoading && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
+          <div className="w-16 h-16 border-4 border-[#0FB1D3] border-t-transparent rounded-full animate-spin"></div>
+        </div>
+      )}
+
     </div>
   );
 }
