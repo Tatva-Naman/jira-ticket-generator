@@ -1,5 +1,4 @@
 import React, { useRef, useState } from "react";
-import { Toaster, toast } from "react-hot-toast";
 
 enum SubTaskType {
   FE = "FE",
@@ -19,6 +18,7 @@ function App() {
   const [responseMessage, setResponseMessage] = useState("");
   const [addErrorMessage, setAddErrorMessage] = useState("");
   const [previewErrorMessage, setPreviewErrorMessage] = useState("");
+  const [errorMessage, setErrorMessage] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
 
   const url = process.env.REACT_APP_RUST_URL || "";
@@ -29,6 +29,8 @@ function App() {
 
     setAddErrorMessage("");
     setPreviewErrorMessage("");
+    setResponseMessage("");
+    setErrorMessage("");
 
     if (stories.filter((s) => s.text === value).length > 0) {
       setAddErrorMessage("User Story already exists!");
@@ -68,6 +70,15 @@ function App() {
 
   //preview
   const previewSubtasks = () => {
+    setAddErrorMessage("");
+    setPreviewErrorMessage("");
+    setErrorMessage("");
+    setResponseMessage("");
+
+    if(stories.length === 0){
+      setPreviewErrorMessage("No User Story to preview SubTasks!");
+      return;
+    }
     generatePreview(stories);
   };
 
@@ -75,6 +86,8 @@ function App() {
   const updateStoryType = (id: number, type: SubTaskType) => {
     setAddErrorMessage("");
     setPreviewErrorMessage("");
+    setErrorMessage("");
+    setResponseMessage("");
 
     setStories(stories.map((s) => (s.id === id ? { ...s, type } : s)));
     setPreviewSubtasks([]);
@@ -84,6 +97,8 @@ function App() {
   const removeStory = (id: number) => {
     setAddErrorMessage("");
     setPreviewErrorMessage("");
+    setErrorMessage("");
+    setResponseMessage("");
 
     setStories((prev) => {
       const updated = prev.filter((s) => s.id !== id);
@@ -98,9 +113,9 @@ function App() {
 
   //generate subtasks
   const generateSubtasks = async (event: any) => {
-    const loadingToast = toast.loading("Creating subtasks...");
     event.preventDefault();
     setAddErrorMessage("");
+    setErrorMessage("");
     setResponseMessage("");
 
     let payload = previewSubtask.map((subtask) => ({
@@ -135,11 +150,10 @@ function App() {
 
         throw new Error(formatted);
       }
-
-      toast.success("SubTasks created successfully!", { id: loadingToast });
+      setResponseMessage("SubTasks created successfully!");
 
     } catch (error: any) {
-      toast.error(error.message, { id: loadingToast });
+      setErrorMessage(error.message);
     }
   };
 
@@ -254,11 +268,11 @@ function App() {
             {responseMessage && (
               <div style={{ color: "green" }}>{responseMessage}</div>
             )}
+            {errorMessage &&( <div style={{ color: "red" }}>{errorMessage}</div>)}
 
           </div>
         )}
       </div>
-      <Toaster position="top-right" />
     </div>
   );
 }
