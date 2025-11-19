@@ -23,6 +23,7 @@ function App() {
 
   const url = process.env.REACT_APP_RUST_URL || "";
 
+  //add story
   const addStory = () => {
     const value = inputRef.current?.value || "";
 
@@ -45,34 +46,11 @@ function App() {
     inputRef.current!.value = "";
   };
 
-  const updateStoryType = (id: number, type: SubTaskType) => {
-    setAddErrorMessage("");
-    setPreviewErrorMessage("");
-
-    setStories(stories.map((s) => (s.id === id ? { ...s, type } : s)));
-  };
-
-  const removeStory = (id: number) => {
-    setAddErrorMessage("");
-    setPreviewErrorMessage("");
-
-    setStories(stories.filter((s) => s.id !== id));
-  };
-
-  const previewSubtasks = () => {
-    setAddErrorMessage("");
-    setPreviewErrorMessage("");
-
-    if (stories.length === 0) {
-      setPreviewSubtasks([]);
-      setPreviewErrorMessage(
-        "No subtasks to preview."
-      );
-      return;
-    }
+  //generate preview
+  const generatePreview = (storyList: Story[]) => {
     const list: string[] = [];
 
-    stories.forEach((s) => {
+    storyList.forEach((s) => {
       if (s.type === SubTaskType.FE || s.type === SubTaskType.Both) {
         list.push(`(${s.text}) FE - Review Requirements`);
         list.push(`(${s.text}) FE - Development`);
@@ -84,9 +62,41 @@ function App() {
         list.push(`(${s.text}) BE - Unit Testing`);
       }
     });
+
     setPreviewSubtasks(list);
   };
 
+  //preview
+  const previewSubtasks = () => {
+    generatePreview(stories);
+  };
+
+  //update story
+  const updateStoryType = (id: number, type: SubTaskType) => {
+    setAddErrorMessage("");
+    setPreviewErrorMessage("");
+
+    setStories(stories.map((s) => (s.id === id ? { ...s, type } : s)));
+    setPreviewSubtasks([]);
+  };
+
+  //remove story
+  const removeStory = (id: number) => {
+    setAddErrorMessage("");
+    setPreviewErrorMessage("");
+
+    setStories((prev) => {
+      const updated = prev.filter((s) => s.id !== id);
+
+      if (previewSubtask.length > 0) {
+        generatePreview(updated);
+      }
+
+      return updated;
+    });
+  };
+
+  //generate subtasks
   const generateSubtasks = async (event: any) => {
     const loadingToast = toast.loading("Creating subtasks...");
     event.preventDefault();
