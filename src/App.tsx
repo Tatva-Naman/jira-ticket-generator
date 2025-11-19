@@ -133,23 +133,60 @@ function App() {
         body: JSON.stringify(payload),
       });
 
-      if (!response.ok) {
-        const errJson = await response.json();
+      // if (!response.ok) {
+      //   const errJson = await response.json();
 
-        let parsedMessages = [];
-        try {
-          parsedMessages = JSON.parse(errJson.message);
-        } catch {
-          parsedMessages = [errJson.message];
+      //   let parsedMessages = [];
+      //   try {
+      //     parsedMessages = JSON.parse(errJson.message);
+      //   } catch {
+      //     parsedMessages = [errJson.message];
+      //   }
+
+      //   const formatted = parsedMessages
+      //     .map((msg: string) => `Error: ${msg}`)
+      //     .join("\n");
+
+      //   throw new Error(formatted);
+      // }
+
+      const json_data = await response.json();
+
+      if (!response.ok || json_data.status === "error") {
+        let formatted = "";
+  
+        if (json_data.created_tasks && json_data.created_tasks.length > 0) {
+          formatted += "Some tasks were created:\n\nID        LINK\n";
+  
+          json_data.created_tasks.forEach((task: any) => {
+            formatted += `${task.id}     ${task.link}\n`;
+          });
+  
+          formatted += "\n"; 
         }
-
-        const formatted = parsedMessages
-          .map((msg: string) => `Error: ${msg}`)
-          .join("\n");
-
-        throw new Error(formatted);
+  
+        if (json_data.error_messages && json_data.error_messages.length > 0) {
+          formatted += "Errors:\n";
+          json_data.error_messages.forEach((msg: string) => {
+            formatted += `• ${msg}\n`;
+          });
+        }
+  
+        if (formatted.trim() === "") {
+          formatted = "Unknown error occurred.";
+        }
+  
+        setPopupMessage(formatted);
+        setPopupType("error");
+        return; 
       }
-      setPopupMessage("SubTasks created successfully!");
+
+      let formatted = "Tasks created successfully!\n\nID         LINK\n";
+      json_data.created_tasks.forEach((task: any) => {
+        formatted += `${task.id}     ${task.link}\n`;
+      });
+
+      setPopupMessage(formatted);
       setPopupType("success");
 
     } catch (error: any) {
@@ -281,7 +318,7 @@ function App() {
       )}
       {popupType !== "" && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-[#0F223A] p-6 rounded-lg w-96 space-y-4 border border-gray-700">
+          <div className="bg-[#0F223A] p-6 rounded-lg w-auto space-y-4 border border-gray-700">
 
             <h2 className="text-xl font-semibold">
               {popupType === "success" ? "Success" : "Error"}
