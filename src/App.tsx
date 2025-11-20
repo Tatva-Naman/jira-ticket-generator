@@ -1,4 +1,4 @@
-import React, { useRef, useState } from "react";
+import { useRef, useState } from "react";
 
 enum SubTaskType {
   FE = "FE",
@@ -12,10 +12,14 @@ interface Story {
   type: SubTaskType;
 }
 
+interface PreviewItem {
+  summary: string;
+  exist: boolean;
+}
+
 function App() {
   const [stories, setStories] = useState<Story[]>([]);
-  const [previewSubtask, setPreviewSubtasks] = useState<string[]>([]);
-  const [responseMessage, setResponseMessage] = useState("");
+  const [previewSubtask, setPreviewSubtask] = useState<PreviewItem[]>([]);
   const [addErrorMessage, setAddErrorMessage] = useState("");
   const [previewErrorMessage, setPreviewErrorMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -24,7 +28,8 @@ function App() {
 
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const url = process.env.REACT_APP_RUST_URL || "";
+  const create_url = process.env.REACT_APP_RUST_CREATE_URL || "";
+  const search_url = process.env.REACT_APP_RUST_SEARCH_URL || "";
 
   //add story
   const addStory = () => {
@@ -32,13 +37,12 @@ function App() {
 
     setAddErrorMessage("");
     setPreviewErrorMessage("");
-    setResponseMessage("");
 
     if (stories.filter((s) => s.text === value).length > 0) {
       setAddErrorMessage("User Story already exists!");
       return;
     } else if (value === "") {
-      setAddErrorMessage("User Story required*");
+      setAddErrorMessage("User Story is required*");
       return;
     } else {
       setStories([
@@ -48,63 +52,71 @@ function App() {
       inputRef.current!.value = "";
     }
     inputRef.current!.value = "";
-    setPreviewSubtasks([]);
-  };
-
-  //generate preview
-  const generatePreview = (storyList: Story[]) => {
-    const list: string[] = [];
-
-    storyList.forEach((s) => {
-      if (s.type === SubTaskType.FE || s.type === SubTaskType.Both) {
-        list.push(`(${s.text}) FE - Review Requirements`);
-        list.push(`(${s.text}) FE - Development`);
-        list.push(`(${s.text}) FE - Unit Testing`);
-      }
-      if (s.type === SubTaskType.BE || s.type === SubTaskType.Both) {
-        list.push(`(${s.text}) BE - Review Requirements`);
-        list.push(`(${s.text}) BE - Development`);
-        list.push(`(${s.text}) BE - Unit Testing`);
-      }
-    });
-
-    setPreviewSubtasks(list);
   };
 
   //preview
-  const previewSubtasks = () => {
+  const previewSubtasks = async (event: any) => {
+    event.preventDefault();
     setAddErrorMessage("");
     setPreviewErrorMessage("");
-    setResponseMessage("");
+    setIsLoading(true);
 
     if (stories.length === 0) {
       setPreviewErrorMessage("No User Story to preview SubTasks!");
       return;
     }
-    generatePreview(stories);
+    console.log("stories:", stories);
+
+    let story_texts = stories.map(s => ({
+      subtask: s.text,
+      type: s.type
+    }));
+
+    console.log("story_texts:", JSON.stringify(story_texts));
+    try {
+
+      const response = await fetch(search_url, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(story_texts),
+      });
+
+      const json_data = await response.json();
+
+      if (!response.ok || json_data.status === "error") {
+        return;
+      }
+      console.log("preview data:", json_data);
+      setPreviewSubtask(json_data);
+
+    } catch (error: any) {
+      setPreviewErrorMessage(error.message);
+
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   //update story
   const updateStoryType = (id: number, type: SubTaskType) => {
     setAddErrorMessage("");
     setPreviewErrorMessage("");
-    setResponseMessage("");
 
     setStories(stories.map((s) => (s.id === id ? { ...s, type } : s)));
-    setPreviewSubtasks([]);
+    setPreviewSubtask([]);
   };
 
-  //remove story
+  //remove story 
   const removeStory = (id: number) => {
     setAddErrorMessage("");
     setPreviewErrorMessage("");
-    setResponseMessage("");
 
     setStories((prev) => {
       const updated = prev.filter((s) => s.id !== id);
-
       if (previewSubtask.length > 0) {
-        generatePreview(updated);
+        setPreviewSubtask([]);
       }
 
       return updated;
@@ -115,18 +127,26 @@ function App() {
   const generateSubtasks = async (event: any) => {
     event.preventDefault();
     setAddErrorMessage("");
-    setResponseMessage("");
     setIsLoading(true);
 
-    let payload = previewSubtask.map((subtask) => ({
-      parent: {
-        key: subtask.match(/\(([^)]+)\)/)![1],
-      },
-      summary: subtask,
-    }));
+    let payload = previewSubtask
+      .filter((subtask) => subtask.exist === false)
+      .map((subtask) => ({
+        parent: {
+          key: subtask.summary.match(/\(([^)]+)\)/)![1],
+        },
+        summary: subtask.summary,
+      }));
+
+    if (payload.length === 0) {
+      setPopupMessage("All subtasks already exist. No new subtasks to create.");
+      setPopupType("error");
+      setIsLoading(false);
+      return;
+    }
 
     try {
-      const response = await fetch(url, {
+      const response = await fetch(create_url, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -273,25 +293,29 @@ function App() {
             <div className="flex justify-between item-center">
               <h2 className="text-xl font-semibold">Subtasks</h2>
             </div>
-            <div className="space-y-4 h-60 overflow-auto thin-scrollbar">
-              {previewSubtask.map((g, id) => (
+
+            <div className="space-y-4 h-60 overflow-auto thin-scrollbar my-4">
+              {previewSubtask.map((item, id) => (
                 <div
                   key={id}
-                  className="bg-[#0F223A] p-3 rounded-md text-sm "
+                  className="bg-[#0F223A] p-3 rounded-md text-sm flex justify-between"
                 >
-                  {g}
+                  <span>{item.summary}</span>
+                  {item.exist ?
+                    <span className="text-green-400">
+                      ✔ Exists
+                    </span> : <></>
+                  }
                 </div>
               ))}
             </div>
+
             <button
               onClick={generateSubtasks}
               className="w-full bg-[#0FB1D3] py-4 font-semibold rounded-md text-lg"
             >
               Generate
             </button>
-            {responseMessage && (
-              <div style={{ color: "green" }}>{responseMessage}</div>
-            )}
           </div>
         )}
       </div>
@@ -319,7 +343,7 @@ function App() {
             <button
               onClick={() => {
                 setStories([]);
-                setPreviewSubtasks([]);
+                setPreviewSubtask([]);
                 setPopupType("");
                 setPopupMessage("");
               }}
