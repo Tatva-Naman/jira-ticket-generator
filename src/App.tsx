@@ -48,6 +48,7 @@ function App() {
       inputRef.current!.value = "";
     }
     inputRef.current!.value = "";
+    setPreviewSubtasks([]);
   };
 
   //generate preview
@@ -133,57 +134,40 @@ function App() {
         body: JSON.stringify(payload),
       });
 
-      // if (!response.ok) {
-      //   const errJson = await response.json();
-
-      //   let parsedMessages = [];
-      //   try {
-      //     parsedMessages = JSON.parse(errJson.message);
-      //   } catch {
-      //     parsedMessages = [errJson.message];
-      //   }
-
-      //   const formatted = parsedMessages
-      //     .map((msg: string) => `Error: ${msg}`)
-      //     .join("\n");
-
-      //   throw new Error(formatted);
-      // }
-
       const json_data = await response.json();
 
       if (!response.ok || json_data.status === "error") {
         let formatted = "";
-  
+
         if (json_data.created_tasks && json_data.created_tasks.length > 0) {
-          formatted += "Some tasks were created:\n\nID        LINK\n";
-  
+          formatted += "Created subtasks :\n\nID        LINK\n";
+
           json_data.created_tasks.forEach((task: any) => {
-            formatted += `${task.id}     ${task.link}\n`;
+            formatted += `${task.id}   <a class="link" href="${task.link}" target="_blank">${task.link}</a>\n`;
           });
-  
-          formatted += "\n"; 
+
+          formatted += "\n";
         }
-  
+
         if (json_data.error_messages && json_data.error_messages.length > 0) {
-          formatted += "Errors:\n";
+          formatted += "Error:\n";
           json_data.error_messages.forEach((msg: string) => {
             formatted += `• ${msg}\n`;
           });
         }
-  
+
         if (formatted.trim() === "") {
           formatted = "Unknown error occurred.";
         }
-  
+
         setPopupMessage(formatted);
         setPopupType("error");
-        return; 
+        return;
       }
 
-      let formatted = "Tasks created successfully!\n\nID         LINK\n";
+      let formatted = "Created subtasks: \n\nID         LINK\n";
       json_data.created_tasks.forEach((task: any) => {
-        formatted += `${task.id}     ${task.link}\n`;
+        formatted += `${task.id}    <a class="link" href="${task.link}" target="_blank">${task.link}</a>\n`;
       });
 
       setPopupMessage(formatted);
@@ -321,12 +305,16 @@ function App() {
           <div className="bg-[#0F223A] p-6 rounded-lg w-auto space-y-4 border border-gray-700">
 
             <h2 className="text-xl font-semibold">
-              {popupType === "success" ? "Success" : "Error"}
+              {popupType === "success" ? "Success" : "Summary"}
             </h2>
 
-            <pre className="whitespace-pre-wrap text-sm">
-              {popupMessage}
-            </pre>
+            <div className="max-h-80 overflow-auto pr-3  thin-scrollbar">
+              <div
+                className="whitespace-pre-wrap text-sm "
+                dangerouslySetInnerHTML={{ __html: popupMessage }}
+              />
+            </div>
+
 
             <button
               onClick={() => {

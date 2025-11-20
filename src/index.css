@@ -32,3 +32,13 @@
   scrollbar-width: thin;
   scrollbar-color: #3a4a63 transparent;
 }
+
+.link{
+  text-decoration: none !important;
+  color: lightblue !important;
+  cursor: pointer;
+}
+
+:hover.link{
+  text-decoration: underline !important;
+}
