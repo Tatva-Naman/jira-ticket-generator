@@ -1,4 +1,4 @@
-import { Story, SubTaskType } from "../types";
+import { Story, SubTaskType } from "../../types";
 
 interface Props {
   stories: Story[];

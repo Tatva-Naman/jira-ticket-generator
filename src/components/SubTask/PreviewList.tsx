@@ -1,4 +1,4 @@
-import { PreviewItem } from "../types";
+import { PreviewItem } from "../../types";
 
 interface Props {
   preview: PreviewItem[];
