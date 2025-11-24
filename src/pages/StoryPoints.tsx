@@ -3,6 +3,7 @@ import { useRef, useState } from "react";
 import AddStory from "../components/StoryPoints/AddStory";
 import Popup from "../components/Popup";
 import Loader from "../components/Loader";
+import toast from "react-hot-toast";
 
 import { Story, SubTaskType } from "../types";
 import StoryList from "../components/StoryPoints/StoryList";
@@ -61,8 +62,7 @@ export default function SubtaskCreator() {
         }));
 
         if(payload.some(p => p.story_points === 0)) {
-            setPopupMessage("Please assign story points to all stories before updating.");
-            setPopupType("error");
+            toast.error("All stories must have a valid story point value.");
             setIsLoading(false);
             return;
         }
@@ -84,23 +84,27 @@ export default function SubtaskCreator() {
             const failed = json_response.failed_stories || [];
     
             if (updated.length > 0 && failed.length === 0) {
-                formatted += `Stories updated successfully:\n\n`;
-                formatted += updated.map((s: string) => `• ${s}`).join("\n");
+                formatted += `Stories updated:\n\n`;
+                formatted += updated.map((s: string) => ` ${s}`).join("\n");
+                
+                toast.success(json_response.message);
                 setPopupType("success");
             }
             else if (updated.length > 0 && failed.length > 0) {
-                formatted += `Stories updated successfully:\n\n`;
-                formatted += updated.map((s: string) => `• ${s}`).join("\n");
-    
+                formatted += `Stories updated:\n\n`;
+                formatted += updated.map((s: string) => ` ${s}`).join("\n");
+
                 formatted += `\n\nError updating stories:\n\n`;
-                formatted += failed.map((s: string) => `• ${s}`).join("\n");
-    
+                formatted += failed.map((s: string) => ` ${s}`).join("\n");
+                
+                toast(json_response.message);
                 setPopupType("error");
             }
             else if (updated.length === 0 && failed.length > 0) {
                 formatted += `Error updating stories:\n\n`;
-                formatted += failed.map((s: string) => `• ${s}`).join("\n");
-    
+                formatted += failed.map((s: string) => ` ${s}`).join("\n");
+                
+                toast.error(json_response.message);
                 setPopupType("error");
             }
 
