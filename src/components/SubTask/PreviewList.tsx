@@ -1,4 +1,6 @@
 import { PreviewItem } from "../../types";
+import { Tooltip } from 'react-tooltip';
+import 'react-tooltip/dist/react-tooltip.css';
 
 interface Props {
   preview: PreviewItem[];
@@ -21,10 +23,11 @@ export default function PreviewList({ preview, generateSubtasks }: Props) {
             <span>{item.summary}</span>
 
             {item.exist ? (
-              <span className="text-red-400">Exists</span>
+              <span className="text-red-400"  data-tooltip-id="my-tooltip" data-tooltip-content="This item already exist">Exists</span>
             ) : (
-              <span className="text-green-400">✔</span>
+              <span className="text-green-400" data-tooltip-id="my-tooltip" data-tooltip-content="This item can be created">✔</span>
             )}
+            <Tooltip id="my-tooltip" />
           </div>
         ))}
       </div>

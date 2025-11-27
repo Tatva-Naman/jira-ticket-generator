@@ -144,7 +144,9 @@ export default function SubtaskCreator() {
 
 
     return (
-        <div className="min-h-screen bg-[#0A1628] text-white p-10">
+        <div className="min-h-screen bg-[#0A1628] text-white">
+            <span className="font-semibold text-4xl block mb-6">Story Points</span>
+
             <div className="max-w-4xl mx-auto bg-[#091422] p-6 rounded-xl shadow-lg space-y-6">
 
                 <AddStory

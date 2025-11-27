@@ -31,7 +31,7 @@ export default function StoryList({ stories, updateStoryType, removeStory }: Pro
               ))}
 
               <button onClick={() => removeStory(s.id)} className="rounded-md">
-                🗑
+                ❌
               </button>
             </div>
           </div>
